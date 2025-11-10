@@ -93,7 +93,7 @@ def exit(arg=""): #exits the program but runs animation first
     os.system("cls" if os.name == "nt" else "clear")
     save_file()
     if arg == "":
-        run_in_terminal(animation("Exiting program", 2))
+        animation("Exiting program", 2)
         os.system("cls" if os.name == "nt" else "clear")
         sys.exit()
     elif arg == "q":
@@ -210,15 +210,16 @@ def add_media(arg=None): #function to prompt user to add media and intakes all i
         # cancelled, just return to prompt normally
         return
 
-listindef = False
+listindef = False #boolean to let system know that indefinite listing is off
 def list_media(view=""): #lists everything in dictionary and accepts arguments for specified views
     global listindef, rows
 
-    v = (view or "").strip().lower()
-    if v in ("indef","indefinite"):
+    if view.lower() in ("indef","indefinite"): #
         listindef = True
-    elif v == "stop":
+        return
+    elif view.lower() == "stop":
         listindef = False
+        return
     
     if not rows:
         print("No media entries found.")
@@ -270,6 +271,8 @@ def prompt(): #constantly allows user to enter commands to do whatever they want
     global listindef
     try:
         while True:
+            if listindef == True:
+                list_media()
             print("Your current prefix is: " + prefix + '\n')
             x = input("Enter command: ")
             x = x.lower()
