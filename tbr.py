@@ -1,4 +1,5 @@
 #IDEA: SAVE EVERYTHING THROUGH THE CLOUD THROUGH GITHUB. CREATE A FUNCTION THAT SAVES AND PUSHES THE FILES AND DATA TO GITHUB OR MAYBE JUST THE DATA
+#IDEA: CREATE CHROME EXTENSION THAT USER CAN ALLOW TO AUTOMATICALLY UPDATE PROGRAM WHEN READING OR WATCHING ON BROWSER
 
 import os 
 import sys
@@ -128,13 +129,38 @@ def add_media(arg=None): #function to prompt user to add media and intakes all i
         ALLOWED_TYPES = {"anime", "manga", "manhwa", "book", "movie", "tv"}
         ALLOWED_STATUS = {"planned", "ongoing", "completed", "dropped"}
 
-        if type_ not in ALLOWED_TYPES:
+
+        if type_.lower() not in ALLOWED_TYPES:
             asyncio.create_task(temp_message(result_field, "Please make sure the type is one of: anime, manga, manhwa, book, movie, or tv."))
             return
         
-        if status not in ALLOWED_STATUS:
+        if status.lower() not in ALLOWED_STATUS:
             asyncio.create_task(temp_message(result_field, "Please make sure the status is one of the following: planned, ongoing, completed, or dropped."))
             return
+        
+        if type_.lower() == "anime" or "tv":
+            season_index = progress.find("s")
+            episode_index = progress.find("e")
+            season_number = progress[season_index + 1:episode_index]
+            episode_number = progress [episode_index + 1:]
+            if season_index != 0 or not progress[season_index + 1].isdigit() or season_index == -1 or not progress[episode_index - 1].isdigit() or not progress[episode_index + 1].isdigit() or episode_index == -1:
+                asyncio.create_task(temp_message(result_field, "Please make sure the progress follows this format (s for season, e for episode, # for the number): s#e# "))
+                return
+        elif type_.lower() == "book":
+            page_index = progress.find("pg")
+            if page_index == -1 or page_index != 0 or not progress[page_index + 1].isdigit():
+                asyncio.create_task(temp_message(result_field, "Please make sure the progress follows this format (pg for page, # for the number): pg# "))
+                return
+        elif type_.lower() == "manga" or "manwha":
+            chapter_index = progress.find("ch")
+            if chapter_index == -1 or chapter_index != 0 or not progress[chapter_index + 1].isdigit():
+                asyncio.create_task(temp_message(result_field, "Please make sure the progress follows this format (ch for chapter, # for the number): ch# "))
+                return
+        elif type_.lower() == "movie":
+            colon_index = progress.find(":")
+            if colon_index != 2 or not progress[0].isdigit() or not progress[1].isdigit() or not progress[3].isdigit() or not progress[4].isdigit() or len(progress) > 5:
+                asyncio.create_task(temp_message(result_field, "Please make sure the progress follows this format (hh for hours, mm for minutes): hh:mm "))
+                return
 
         rows.append({
             "type": type_,
@@ -210,25 +236,25 @@ def add_media(arg=None): #function to prompt user to add media and intakes all i
         # cancelled, just return to prompt normally
         return
 
-listindef = False #boolean to let system know that indefinite listing is off
+listindef = False #boolean to let system know that indefinite listing is off (default is off but might improve code to )
 def list_media(view=""): #lists everything in dictionary and accepts arguments for specified views
     global listindef, rows
 
-    if view.lower() in ("indef","indefinite"): #
-        listindef = True
-        return
-    elif view.lower() == "stop":
-        listindef = False
-        return
+    if view.lower() in ("indef","indefinite"): #if argument is "indef" or "indefinite"
+        listindef = True #turn on indefinite listing
+        return #return now bc prompt is going to print it from now on before asking
+    elif view.lower() == "stop": #if argument is "stop"
+        listindef = False #turn off indefinite listing
+        return #return now because function will list the media now if not returned
     
-    if not rows:
+    if not rows: 
         print("No media entries found.")
         return
 
-    print(f"{'Title':<30} {'Type':<15} {'Status':<10}")
-    print("-" * 60)
+    print(f"{'Title':<30} {'Type':<15} {'Status':<10} {'Progress':<10}")
+    print("-" * 70)
     for r in rows:
-        print(f"{r['title']:<30} {r['type']:<15} {r['status']:<10}")
+        print(f"{r['title']:<30} {r['type']:<15} {r['status']:<10} {r['progress']:<10}")
     print("\n")
 
 
@@ -255,7 +281,13 @@ def complete(media): #changes the status of a media to complete
     found = False
     for r in rows:
         if r["title"].lower() == media.lower():
+            if r["status"] == "completed":
+                print("Media is already completed...")
+                time.sleep(3)
+                os.system("cls" if os.name == "nt" else "clear")
+                return
             r["status"] = "completed"
+            r["progress"] = "-"
             r["lastupdated"] = now
             r["datecompleted"] = now
             found = True
