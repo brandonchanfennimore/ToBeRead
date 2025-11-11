@@ -109,6 +109,20 @@ async def temp_message(info_field, text, duration = 5): #function to write messa
     info_field.text = ""
     get_app().invalidate()
 
+def get_season_episode(seasonepisode):
+    global season_number, episode_number
+    season_index = seasonepisode.find("s")
+    episode_index = seasonepisode.find("e")
+    season_number = seasonepisode[season_index + 1:episode_index]
+    episode_number = seasonepisode[episode_index + 1:]
+    if season_index != 0 or not seasonepisode[season_index + 1].isdigit() or season_index == -1 or not seasonepisode[episode_index - 1].isdigit() or not seasonepisode[episode_index + 1].isdigit() or episode_index == -1:
+        os.system("cls" if os.name == "nt" else "clear")
+        print("Error with getting season and episode in helper function.")
+        time.sleep(3)
+        return None, None
+    else:
+        return int(season_number), int(episode_number)
+
 def add_media(arg=None): #function to prompt user to add media and intakes all information
     title_field = TextArea(height=1, prompt='', multiline=False)
     type_field = TextArea(height=1, prompt='', multiline=False)
@@ -139,11 +153,8 @@ def add_media(arg=None): #function to prompt user to add media and intakes all i
             return
         
         if type_.lower() == "anime" or "tv":
-            season_index = progress.find("s")
-            episode_index = progress.find("e")
-            season_number = progress[season_index + 1:episode_index]
-            episode_number = progress [episode_index + 1:]
-            if season_index != 0 or not progress[season_index + 1].isdigit() or season_index == -1 or not progress[episode_index - 1].isdigit() or not progress[episode_index + 1].isdigit() or episode_index == -1:
+            s, e = get_season_episode(progress)
+            if s is None or e is None:
                 asyncio.create_task(temp_message(result_field, "Please make sure the progress follows this format (s for season, e for episode, # for the number): s#e# "))
                 return
         elif type_.lower() == "book":
@@ -292,12 +303,47 @@ def complete(media): #changes the status of a media to complete
             r["datecompleted"] = now
             found = True
             print("Completion successful!\n")
-            time.sleep(3)
+            time.sleep(1)
             break
     if not found:
         print("Unable to identify media.\n")
         return
     
+def update(media, progress = ""):
+    found = False
+    for r in rows:
+        if r["title"].lower() == media.lower():
+            if progress == "":
+                if r["type"] == "anime" or r["type"] == "tv":
+                    s, e = get_season_episode(r["progress"])
+                    os.system("cls" if os.name == "nt" else "clear")
+                    while True:
+                        whichone = input("Which one would you like to update: 'season' or 'episode'? ")
+                        if whichone.lower() == "season":
+                            s += 1
+                            e = 0
+                            r["progress"] = f"s{s}e{e}"
+                            os.system("cls" if os.name == "nt" else "clear")
+                            print("Update successful!")
+                            time.sleep(1)
+                            return
+                        elif whichone.lower() == "episode": 
+                            e += 1
+                            r["progress"] = f"s{s}e{e}"
+                            os.system("cls" if os.name == "nt" else "clear")
+                            print("Update successful!")
+                            time.sleep(1)
+                            return
+                        else:
+                            os.system("cls" if os.name == "nt" else "clear")
+                            print("Not a valid answer...\n")
+                            time.sleep(1)
+            found = True
+            break
+    if not found:
+        print("Unable to identify media.\n")
+        return
+
 
 def prompt(): #constantly allows user to enter commands to do whatever they want
     global listindef
