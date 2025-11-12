@@ -113,15 +113,29 @@ def get_season_episode(seasonepisode):
     global season_number, episode_number
     season_index = seasonepisode.find("s")
     episode_index = seasonepisode.find("e")
-    season_number = seasonepisode[season_index + 1:episode_index]
-    episode_number = seasonepisode[episode_index + 1:]
-    if season_index != 0 or not seasonepisode[season_index + 1].isdigit() or season_index == -1 or not seasonepisode[episode_index - 1].isdigit() or not seasonepisode[episode_index + 1].isdigit() or episode_index == -1:
+
+    if (season_index != 0 or  
+        season_index == -1 or  
+        episode_index == -1 or
+        episode_index <= season_index + 1
+        ):
+
         os.system("cls" if os.name == "nt" else "clear")
         print("Error with getting season and episode in helper function.")
         time.sleep(3)
         return None, None
-    else:
-        return int(season_number), int(episode_number)
+    
+    season_number = seasonepisode[season_index + 1:episode_index]
+    episode_number = seasonepisode[episode_index + 1:]
+    
+    if not season_number or not episode_number or not season_number.isdigit() or not episode_number.isdigit():
+        os.system("cls" if os.name == "nt" else "clear")
+        print("Error with getting season and episode in helper function.")
+        time.sleep(3)
+        return None, None
+
+
+    return int(season_number), int(episode_number)
 
 def add_media(arg=None): #function to prompt user to add media and intakes all information
     title_field = TextArea(height=1, prompt='', multiline=False)
@@ -308,8 +322,57 @@ def complete(media): #changes the status of a media to complete
     if not found:
         print("Unable to identify media.\n")
         return
+
+def check_for_existence_or_duplicate(media): #helper function to check that media exists and checks for duplicates
+    found = False
+    anime = 0
+    tv = 0
+    movie = 0
+    book = 0
+    manga = 0
+    manwha = 0
+    for r in rows:
+        if r["title"].lower() == media.lower():
+            found = True
+            if r["type"] == "anime":
+                anime += 1
+            elif r["type"] == "tv":
+                tv += 1
+            elif r["type"] == "movie":
+                movie += 1
+            elif r["type"] == "book":
+                book += 1
+            elif r["type"] == "manga":
+                manga += 1
+            elif r["type"] == "manwha":
+                manwha += 1
+    if not found:
+        os.system("cls" if os.name == "nt" else "clear")
+        print("Error! Media not found. Please make sure your spelling is correct or that you're not delusional.")
+        time.sleep(2)
+        os.system("cls" if os.name== "nt" else "clear")
+        return False
     
-def update(media, progress = ""):
+    if anime > 1 or tv > 1 or movie > 1 or book > 1 or manga > 1 or manwha > 1:
+        os.system("cls" if os.name == "nt" else "clear")
+        print(f"{'Title':<30} {'Type':<15} {'Status':<10} {'Progress':<10}")
+        print("-" * 70)
+        for r in rows:
+            if r["title"].lower() == media.lower():
+                print(f"{r['title']:<30} {r['type']:<15} {r['status']:<10} {r['progress']:<10}")
+        print("\n")
+        print("Error! You have multiple medias with the same name AND type. Please change the name or the type of either.")
+        time.sleep(3)
+        return False
+    
+    return True
+
+def check(media):
+    if check_for_existence_or_duplicate(media):
+        print("No media was found with no duplicates")
+
+
+def update(media, progress = ""): #updates progress on media, accepts given progress but if not given a progress then auto updates by 1
     found = False
     for r in rows:
         if r["title"].lower() == media.lower():
@@ -337,7 +400,9 @@ def update(media, progress = ""):
                         else:
                             os.system("cls" if os.name == "nt" else "clear")
                             print("Not a valid answer...\n")
-                            time.sleep(1)
+                            time.sleep(2)
+                            os.system("cls" if os.name == "nt" else "clear")
+
             found = True
             break
     if not found:
@@ -399,7 +464,8 @@ commands = { #COMMANDS SHOULD BE AT THE BOTTOM SO THAT ALL THE FUNCTIONS ARE DEF
     prefix + "wipe": wipe,
     prefix + "settings": settings,
     prefix + "help": help_user,
-    prefix + "exit": exit
+    prefix + "exit": exit,
+    prefix + "check": check
 }
 
 
