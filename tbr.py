@@ -109,6 +109,51 @@ async def temp_message(info_field, text, duration = 5): #function to write messa
     info_field.text = ""
     get_app().invalidate()
 
+def check_for_duplicate(media): #helper function to check for duplicates
+    found = False
+    anime = 0
+    tv = 0
+    movie = 0
+    book = 0
+    manga = 0
+    manwha = 0
+    for r in rows:
+        if r["title"].lower() == media.lower():
+            found = True
+            if r["type"] == "anime":
+                anime += 1
+            elif r["type"] == "tv":
+                tv += 1
+            elif r["type"] == "movie":
+                movie += 1
+            elif r["type"] == "book":
+                book += 1
+            elif r["type"] == "manga":
+                manga += 1
+            elif r["type"] == "manwha":
+                manwha += 1
+    if not found:
+        os.system("cls" if os.name == "nt" else "clear")
+        print("Error! Media not found. Please make sure your spelling is correct or that you're not delusional.\n")
+        time.sleep(2)
+        os.system("cls" if os.name== "nt" else "clear")
+        return False
+    
+    if anime > 1 or tv > 1 or movie > 1 or book > 1 or manga > 1 or manwha > 1:
+        os.system("cls" if os.name == "nt" else "clear")
+        print(f"{'Title':<30} {'Type':<15} {'Status':<10} {'Progress':<10}")
+        print("-" * 70)
+        for r in rows:
+            if r["title"].lower() == media.lower():
+                print(f"{r['title']:<30} {r['type']:<15} {r['status']:<10} {r['progress']:<10}")
+        print("\n")
+        print("Error! You have multiple listings with the same name AND type. Please change the name or the type of either.\n")
+        time.sleep(3)
+        return False
+    
+    return True
+
+
 def get_season_episode(seasonepisode):
     global season_number, episode_number
     season_index = seasonepisode.find("s")
@@ -120,18 +165,12 @@ def get_season_episode(seasonepisode):
         episode_index <= season_index + 1
         ):
 
-        os.system("cls" if os.name == "nt" else "clear")
-        print("Error with getting season and episode in helper function.")
-        time.sleep(3)
         return None, None
     
     season_number = seasonepisode[season_index + 1:episode_index]
     episode_number = seasonepisode[episode_index + 1:]
     
     if not season_number or not episode_number or not season_number.isdigit() or not episode_number.isdigit():
-        os.system("cls" if os.name == "nt" else "clear")
-        print("Error with getting season and episode in helper function.")
-        time.sleep(3)
         return None, None
 
 
@@ -186,6 +225,13 @@ def add_media(arg=None): #function to prompt user to add media and intakes all i
             if colon_index != 2 or not progress[0].isdigit() or not progress[1].isdigit() or not progress[3].isdigit() or not progress[4].isdigit() or len(progress) > 5:
                 asyncio.create_task(temp_message(result_field, "Please make sure the progress follows this format (hh for hours, mm for minutes): hh:mm "))
                 return
+
+        def check_for_existence(media):
+            found = False
+            for r in rows:
+                if r["title"].lower() == media.lower():
+            
+
 
         rows.append({
             "type": type_,
@@ -323,52 +369,10 @@ def complete(media): #changes the status of a media to complete
         print("Unable to identify media.\n")
         return
 
-def check_for_existence_or_duplicate(media): #helper function to check that media exists and checks for duplicates
-    found = False
-    anime = 0
-    tv = 0
-    movie = 0
-    book = 0
-    manga = 0
-    manwha = 0
-    for r in rows:
-        if r["title"].lower() == media.lower():
-            found = True
-            if r["type"] == "anime":
-                anime += 1
-            elif r["type"] == "tv":
-                tv += 1
-            elif r["type"] == "movie":
-                movie += 1
-            elif r["type"] == "book":
-                book += 1
-            elif r["type"] == "manga":
-                manga += 1
-            elif r["type"] == "manwha":
-                manwha += 1
-    if not found:
-        os.system("cls" if os.name == "nt" else "clear")
-        print("Error! Media not found. Please make sure your spelling is correct or that you're not delusional.")
-        time.sleep(2)
-        os.system("cls" if os.name== "nt" else "clear")
-        return False
-    
-    if anime > 1 or tv > 1 or movie > 1 or book > 1 or manga > 1 or manwha > 1:
-        os.system("cls" if os.name == "nt" else "clear")
-        print(f"{'Title':<30} {'Type':<15} {'Status':<10} {'Progress':<10}")
-        print("-" * 70)
-        for r in rows:
-            if r["title"].lower() == media.lower():
-                print(f"{r['title']:<30} {r['type']:<15} {r['status']:<10} {r['progress']:<10}")
-        print("\n")
-        print("Error! You have multiple medias with the same name AND type. Please change the name or the type of either.")
-        time.sleep(3)
-        return False
-    
-    return True
+
 
 def check(media):
-    if check_for_existence_or_duplicate(media):
+    if check_for_duplicate(media):
         print("No media was found with no duplicates")
 
 
@@ -416,7 +420,7 @@ def prompt(): #constantly allows user to enter commands to do whatever they want
         while True:
             if listindef == True:
                 list_media()
-            print("Your current prefix is: " + prefix + '\n')
+            print("Your current prefix is: " + prefix)
             x = input("Enter command: ")
             x = x.lower()
             os.system("cls" if os.name == "nt" else "clear")
