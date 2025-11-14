@@ -109,8 +109,21 @@ async def temp_message(info_field, text, duration = 5): #function to write messa
     info_field.text = ""
     get_app().invalidate()
 
+def check_for_existence(media): #helper function to check to make sure media exists
+    global rows
+    for r in rows:
+        if r["title"].lower() == media.lower():
+            return True
+    '''os.system("cls" if os.name == "nt" else "clear")
+    print("Error! Media not found. Please make sure your spelling is correct or that you're not delusional.\n")
+    time.sleep(2)
+    os.system("cls" if os.name== "nt" else "clear")'''
+    return False
+
+
 def check_for_duplicate(media): #helper function to check for duplicates
-    found = False
+    global rows
+
     anime = 0
     tv = 0
     movie = 0
@@ -119,7 +132,6 @@ def check_for_duplicate(media): #helper function to check for duplicates
     manwha = 0
     for r in rows:
         if r["title"].lower() == media.lower():
-            found = True
             if r["type"] == "anime":
                 anime += 1
             elif r["type"] == "tv":
@@ -132,15 +144,10 @@ def check_for_duplicate(media): #helper function to check for duplicates
                 manga += 1
             elif r["type"] == "manwha":
                 manwha += 1
-    if not found:
-        os.system("cls" if os.name == "nt" else "clear")
-        print("Error! Media not found. Please make sure your spelling is correct or that you're not delusional.\n")
-        time.sleep(2)
-        os.system("cls" if os.name== "nt" else "clear")
-        return False
+
     
-    if anime > 1 or tv > 1 or movie > 1 or book > 1 or manga > 1 or manwha > 1:
-        os.system("cls" if os.name == "nt" else "clear")
+    if anime > 1 or tv > 1 or movie > 1 or book > 1 or manga > 1 or manwha > 1: #checks for duplicates, if so spits out list of duplicates
+        '''os.system("cls" if os.name == "nt" else "clear")
         print(f"{'Title':<30} {'Type':<15} {'Status':<10} {'Progress':<10}")
         print("-" * 70)
         for r in rows:
@@ -148,10 +155,10 @@ def check_for_duplicate(media): #helper function to check for duplicates
                 print(f"{r['title']:<30} {r['type']:<15} {r['status']:<10} {r['progress']:<10}")
         print("\n")
         print("Error! You have multiple listings with the same name AND type. Please change the name or the type of either.\n")
-        time.sleep(3)
+        time.sleep(3) '''
         return False
     
-    return True
+    return True #true in sense that we're all good not in that there are duplicates
 
 
 def get_season_episode(seasonepisode):
@@ -226,12 +233,8 @@ def add_media(arg=None): #function to prompt user to add media and intakes all i
                 asyncio.create_task(temp_message(result_field, "Please make sure the progress follows this format (hh for hours, mm for minutes): hh:mm "))
                 return
 
-        def check_for_existence(media):
-            found = False
-            for r in rows:
-                if r["title"].lower() == media.lower():
-            
-
+        #MUST CREATE A CHECK FOR EXISTING MEDIA, IF SO THEN PRINT OUT ASYNCIO TEMP MESSAGE
+        if
 
         rows.append({
             "type": type_,
