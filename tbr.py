@@ -147,15 +147,6 @@ def check_for_duplicate(media): #helper function to check for duplicates
 
     
     if anime > 1 or tv > 1 or movie > 1 or book > 1 or manga > 1 or manwha > 1: #checks for duplicates, if so spits out list of duplicates
-        '''os.system("cls" if os.name == "nt" else "clear")
-        print(f"{'Title':<30} {'Type':<15} {'Status':<10} {'Progress':<10}")
-        print("-" * 70)
-        for r in rows:
-            if r["title"].lower() == media.lower():
-                print(f"{r['title']:<30} {r['type']:<15} {r['status']:<10} {r['progress']:<10}")
-        print("\n")
-        print("Error! You have multiple listings with the same name AND type. Please change the name or the type of either.\n")
-        time.sleep(3) '''
         return False
     
     return True #true in sense that we're all good not in that there are duplicates
@@ -417,9 +408,20 @@ def complete(media): #changes the status of a media to complete
 
 
 
-def check(media):
+def check(media): #user function to check media for duplicates, if so, will print all duplicates
     if check_for_duplicate(media):
         print("No media was found with no duplicates")
+    elif not check_for_duplicate(media):
+        os.system("cls" if os.name == "nt" else "clear")
+        print(f"{'Title':<30} {'Type':<15} {'Status':<10} {'Progress':<10}")
+        print("-" * 70)
+        for r in rows:
+            if r["title"].lower() == media.lower():
+                print(f"{r['title']:<30} {r['type']:<15} {r['status']:<10} {r['progress']:<10}")
+        print("\n")
+        print("Error! You have multiple listings with the same name AND type. Please change the name or the type of either.\n")
+        time.sleep(3)
+           
 
 
 def update(media, progress = ""): #updates progress on media, accepts given progress but if not given a progress then auto updates by 1
