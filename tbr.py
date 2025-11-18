@@ -161,10 +161,9 @@ def check_for_duplicate(media): #helper function to check for duplicates
     return True #true in sense that we're all good not in that there are duplicates
 
 
-def get_season_episode(seasonepisode):
-    global season_number, episode_number
-    season_index = seasonepisode.find("s")
-    episode_index = seasonepisode.find("e")
+def get_season_episode(progress): #helper function to grab season and episode out of progress
+    season_index = progress.find("s")
+    episode_index = progress.find("e")
 
     if (season_index != 0 or  
         season_index == -1 or  
@@ -174,14 +173,54 @@ def get_season_episode(seasonepisode):
 
         return None, None
     
-    season_number = seasonepisode[season_index + 1:episode_index]
-    episode_number = seasonepisode[episode_index + 1:]
+    season_number = progress[season_index + 1:episode_index]
+    episode_number = progress[episode_index + 1:]
     
     if not season_number or not episode_number or not season_number.isdigit() or not episode_number.isdigit():
         return None, None
 
 
     return int(season_number), int(episode_number)
+
+def get_page(progress):
+    page_index = progress.find("pg")
+    if (page_index == -1 or
+        page_index != 2 
+        ):
+        return None
+    
+    page_number = progress[page_index + 1:]
+
+    if not page_number or not page_number.isdigit():
+        return None
+    
+    return int(page_number)
+
+def get_chapter(progress):
+    chapter_index = progress.find("ch")
+    if (chapter_index == -1 or
+        chapter_index != 2 
+        ):
+        return None
+    
+    chapter_number = progress[chapter_index + 1 : ]
+
+    if not chapter_number or not chapter_number.isdigit():
+        return None
+    
+    return int(chapter_number)
+
+def get_timestamp(progress):
+    colon_index = progress.find(":")
+    if(colon_index == -1 or
+       colon_index != 2
+       ):
+        return None
+    hh = progress[0 : colon_index]
+    mm = progress[colon_index : ]
+
+    if not hh or not hh.isdigit() or not mm or not mm.isdigit():
+        return int(hh), int(mm)
 
 def add_media(arg=None): #function to prompt user to add media and intakes all information
     title_field = TextArea(height=1, prompt='', multiline=False)
@@ -215,26 +254,30 @@ def add_media(arg=None): #function to prompt user to add media and intakes all i
         if type_.lower() == "anime" or "tv":
             s, e = get_season_episode(progress)
             if s is None or e is None:
-                asyncio.create_task(temp_message(result_field, "Please make sure the progress follows this format (s for season, e for episode, # for the number): s#e# "))
+                asyncio.create_task(temp_message(result_field, "Error! Please make sure the progress follows this format: 's#e#' (s for season, e for episode, # for the number)"))
                 return
         elif type_.lower() == "book":
             page_index = progress.find("pg")
             if page_index == -1 or page_index != 0 or not progress[page_index + 1].isdigit():
-                asyncio.create_task(temp_message(result_field, "Please make sure the progress follows this format (pg for page, # for the number): pg# "))
+                asyncio.create_task(temp_message(result_field, "Error! Please make sure the progress follows this format: 'pg#' (pg for page, # for number)"))
                 return
         elif type_.lower() == "manga" or "manwha":
             chapter_index = progress.find("ch")
             if chapter_index == -1 or chapter_index != 0 or not progress[chapter_index + 1].isdigit():
-                asyncio.create_task(temp_message(result_field, "Please make sure the progress follows this format (ch for chapter, # for the number): ch# "))
+                asyncio.create_task(temp_message(result_field, "Error! Please make sure the progress follows this format: 'ch#' (ch for chapter, # for number)"))
                 return
         elif type_.lower() == "movie":
             colon_index = progress.find(":")
             if colon_index != 2 or not progress[0].isdigit() or not progress[1].isdigit() or not progress[3].isdigit() or not progress[4].isdigit() or len(progress) > 5:
-                asyncio.create_task(temp_message(result_field, "Please make sure the progress follows this format (hh for hours, mm for minutes): hh:mm "))
+                asyncio.create_task(temp_message(result_field, "Error! Please make sure the progress follows this format: 'hh:mm' (hh for hour, mm for minute)"))
                 return
 
-        #MUST CREATE A CHECK FOR EXISTING MEDIA, IF SO THEN PRINT OUT ASYNCIO TEMP MESSAGE
-        if
+        for r in rows:
+            if r["title"].lower() == title.lower():
+                if r["type"].lower() == type.lower():
+                    asyncio.create_task(temp_message(result_field, "Error! A media with the same name and type exists already. Please edit your attempted addition or edit the already existing media."))
+                    return  
+
 
         rows.append({
             "type": type_,
@@ -380,14 +423,23 @@ def check(media):
 
 
 def update(media, progress = ""): #updates progress on media, accepts given progress but if not given a progress then auto updates by 1
-    found = False
+    if check_for_existence(media) == False: #if media entered doesn't exist
+        print("Unable to identify media.\n")
+        return
     for r in rows:
         if r["title"].lower() == media.lower():
-            if progress == "":
-                if r["type"] == "anime" or r["type"] == "tv":
+            if progress == "": #if no specific progress
+                if r["type"] == "anime" or r["type"] == "tv": #updates anime and tv shows by either 1 season or 1 episode
                     s, e = get_season_episode(r["progress"])
+
+                    if s == None or e == None:
+                        os.system("cls" if os.name == "nt" else "clear")
+                        print("Error! There's something wrong with your progress attribute of the media you entered. Please edit your media progress to match the following format: s#e#.")
+                        time.sleep(3)
+                        return
+
                     os.system("cls" if os.name == "nt" else "clear")
-                    while True:
+                    while True: 
                         whichone = input("Which one would you like to update: 'season' or 'episode'? ")
                         if whichone.lower() == "season":
                             s += 1
@@ -409,12 +461,111 @@ def update(media, progress = ""): #updates progress on media, accepts given prog
                             print("Not a valid answer...\n")
                             time.sleep(2)
                             os.system("cls" if os.name == "nt" else "clear")
+                
+                if r["type"] == "book": #updates books by 1 page
+                    pg = get_page(r["progress"])
 
-            found = True
-            break
-    if not found:
-        print("Unable to identify media.\n")
-        return
+                    if pg == None:
+                        os.system("cls" if os.name == "nt" else "clear")
+                        print("Error! There's something wrong with your progress attribute of the media you entered. Please list and edit if necessary.")
+                        time.sleep(3)
+                        return
+                    
+                    pg += 1
+                    r["progress"] = f"pg{pg}"
+                    os.system("cls" if os.name == "nt" else "clear")
+                    print("Update successful!")
+                    time.sleep(1)
+                    return
+
+                if r["type"] == "manga" or r["type"] == "manwha": #updates manga and manwha by 1 chapter
+                    ch = get_chapter(r["progress"])
+
+                    if ch == None:
+                        os.system("cls" if os.name == "nt" else "clear")
+                        print("Error! There's something wrong with your progress attribute of the media you entered. Please list and edit if necessary.")
+                        time.sleep(3)
+                        return
+                    
+                    ch += 1
+                    r["progress"] = f"ch{ch}"
+                    os.system("cls" if os.name == "nt" else "clear")
+                    print("Update successful!")
+                    time.sleep(1)
+                    return
+
+                if r["type"] == "movie": #prints that can't really update movie progress without specified timestamp
+                    os.system("cls" if os.name == "nt" else "clear")
+                    print("Error! We can't really update a movie progress for you without a specific timestamp. Give me a specific timestamp or just finish the movie.")
+                    time.sleep(3)
+                    return
+                
+            if r["type"] == "anime" or r["type"] == "tv": #update anime and tv shows with specified season and episode
+                s, e = get_season_episode(progress)
+                
+                if s == None or e == None:
+                    os.system("cls" if os.name == "nt" else "clear")
+                    print("Error! Please make sure the progress follows this format: 's#e#' (s for season, e for episode, # for the number)")
+                    time.sleep(3)
+                    return
+                
+                r["progress"] = f"s{s}e{e}"
+                os.system("cls" if os.name == "nt" else "clear")
+                print("Update successful!")
+                time.sleep(1)
+                return
+
+            if r["type"] == "book": #update books with specified page
+                pg = get_page(progress)
+
+                if pg == None:
+                    os.system("cls" if os.name == "nt" else "clear")
+                    print("Error! Please make sure the progress follows this format: 'pg#' (pg for page, # for number)")
+                    time.sleep(3)
+                    return
+                
+                r["progress"] = f"pg{pg}"
+                os.system("cls" if os.name == "nt" else "clear")
+                print("Update successful!")
+                time.sleep(1)
+                return
+
+            if r["type"] == "manga" or r["type"] == "manwha": #update manga and manwha with specified chapter
+                ch = get_chapter(progress)
+                
+                if ch == None:
+                    os.system("cls" if os.name == "nt" else "clear")
+                    print("Error! Please make sure the progress follows this format: 'ch#' (ch for chapter, # for number)")
+                    time.sleep(3)
+                    return
+                
+                r["progress"] = f"ch{ch}"
+                os.system("cls" if os.name == "nt" else "clear")
+                print("Update successful!")
+                time.sleep(1)
+                return
+
+            if r["type"] == "movie": #update movie with specificed timestamp
+                hh, mm = get_timestamp(progress)
+                
+                if hh == None or mm == None:
+                    os.system("cls" if os.name == "nt" else "clear")
+                    print("Error! Please make sure the progress follows this format: 'hh:mm' (hh for hour, mm for minute)")
+                    time.sleep(3)
+                    return
+                
+                r["progress"] = f"{hh}:{mm}"
+                os.system("cls" if os.name == "nt" else "clear")
+                print("Update successful!")
+                time.sleep(1)
+                return
+
+
+
+        
+
+
+                    
 
 
 def prompt(): #constantly allows user to enter commands to do whatever they want
