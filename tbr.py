@@ -1,6 +1,9 @@
 #IDEA: SAVE EVERYTHING THROUGH THE CLOUD THROUGH GITHUB. CREATE A FUNCTION THAT SAVES AND PUSHES THE FILES AND DATA TO GITHUB OR MAYBE JUST THE DATA
 #IDEA: CREATE CHROME EXTENSION THAT USER CAN ALLOW TO AUTOMATICALLY UPDATE PROGRAM WHEN READING OR WATCHING ON BROWSER
 
+#PROGRAM CHANGES: 1. ADD AUTHOR/DIRECTOR ATTRIBUTE FOR BOOKS, MANGA, MANWHA, MOVIES
+#TODO: CODE LIST DETAILS, SORT, HELP, PURGE, WIPE, AND EDIT (I WANT EDIT TO BE LIKE ADD APPLICATION)
+
 import os 
 import sys
 import csv
@@ -17,11 +20,10 @@ from prompt_toolkit.application import run_in_terminal
 
 
 properties = ["type", "title", "lastupdated", "status", "progress", "rating", "dateadded", "datecompleted"]
-prefix = '!'
 now = datetime.now().strftime("%Y-%m-%d")
 
 #def complete(arg=None): pass
-def update(arg=None): pass
+#def update(arg=None): pass
 #def list_media(arg=None): pass
 def sort(arg=None): pass
 #def delete_media(arg=None): pass
@@ -120,7 +122,6 @@ def check_for_existence(media): #helper function to check to make sure media exi
     os.system("cls" if os.name== "nt" else "clear")'''
     return False
 
-
 def check_for_duplicate(media): #helper function to check for duplicates
     global rows
 
@@ -151,7 +152,6 @@ def check_for_duplicate(media): #helper function to check for duplicates
     
     return True #true in sense that we're all good not in that there are duplicates
 
-
 def get_season_episode(progress): #helper function to grab season and episode out of progress
     season_index = progress.find("s")
     episode_index = progress.find("e")
@@ -173,7 +173,7 @@ def get_season_episode(progress): #helper function to grab season and episode ou
 
     return int(season_number), int(episode_number)
 
-def get_page(progress):
+def get_page(progress): #helper function to grab page out of progress
     page_index = progress.find("pg")
     if (page_index == -1 or
         page_index != 2 
@@ -187,7 +187,7 @@ def get_page(progress):
     
     return int(page_number)
 
-def get_chapter(progress):
+def get_chapter(progress): #helper function to grab chapter out of progress
     chapter_index = progress.find("ch")
     if (chapter_index == -1 or
         chapter_index != 2 
@@ -201,7 +201,7 @@ def get_chapter(progress):
     
     return int(chapter_number)
 
-def get_timestamp(progress):
+def get_timestamp(progress): #helper function to grab hours and minutes out of progress
     colon_index = progress.find(":")
     if(colon_index == -1 or
        colon_index != 2
@@ -276,9 +276,9 @@ def add_media(arg=None): #function to prompt user to add media and intakes all i
             "lastupdated": now,
             "status": status,
             "progress": progress,
-            "rating": "",
+            "rating": "-",
             "dateadded": now,
-            "datecompleted": ""
+            "datecompleted": "-"
         })
         save_file()
         app.exit(result=0)
@@ -359,12 +359,11 @@ def list_media(view=""): #lists everything in dictionary and accepts arguments f
         print("No media entries found.")
         return
 
-    print(f"{'Title':<30} {'Type':<15} {'Status':<10} {'Progress':<10}")
-    print("-" * 70)
+    print(f"{'Title':<30} {'Type':<15} {'Status':<10} {'Progress':<10} {'Rating':<10}")
+    print("-" * 75)
     for r in rows:
-        print(f"{r['title']:<30} {r['type']:<15} {r['status']:<10} {r['progress']:<10}")
+        print(f"{r['title']:<30} {r['type']:<15} {r['status']:<10} {r['progress']:<10} {r['rating']:<10}")
     print("\n")
-
 
 def delete_media(arg=None): #deletes media from dictionary
     global rows
@@ -407,23 +406,20 @@ def complete(media): #changes the status of a media to complete
         return
 
 
-
 def check(media): #user function to check media for duplicates, if so, will print all duplicates
     if check_for_duplicate(media):
         print("No media was found with no duplicates")
     elif not check_for_duplicate(media):
         os.system("cls" if os.name == "nt" else "clear")
-        print(f"{'Title':<30} {'Type':<15} {'Status':<10} {'Progress':<10}")
-        print("-" * 70)
+        print(f"{'Title':<30} {'Type':<15} {'Status':<10} {'Progress':<10} {'Rating':<10}")
+        print("-" * 75)
         for r in rows:
             if r["title"].lower() == media.lower():
-                print(f"{r['title']:<30} {r['type']:<15} {r['status']:<10} {r['progress']:<10}")
+                print(f"{r['title']:<30} {r['type']:<15} {r['status']:<10} {r['progress']:<10} {r['rating']:<10}")
         print("\n")
         print("Error! You have multiple listings with the same name AND type. Please change the name or the type of either.\n")
         time.sleep(3)
            
-
-
 def update(media, progress = ""): #updates progress on media, accepts given progress but if not given a progress then auto updates by 1
     if check_for_existence(media) == False: #if media entered doesn't exist
         print("Unable to identify media.\n")
@@ -447,6 +443,7 @@ def update(media, progress = ""): #updates progress on media, accepts given prog
                             s += 1
                             e = 0
                             r["progress"] = f"s{s}e{e}"
+                            r["lastupdated"] = now
                             os.system("cls" if os.name == "nt" else "clear")
                             print("Update successful!")
                             time.sleep(1)
@@ -454,6 +451,7 @@ def update(media, progress = ""): #updates progress on media, accepts given prog
                         elif whichone.lower() == "episode": 
                             e += 1
                             r["progress"] = f"s{s}e{e}"
+                            r["lastupdated"] = now
                             os.system("cls" if os.name == "nt" else "clear")
                             print("Update successful!")
                             time.sleep(1)
@@ -475,6 +473,7 @@ def update(media, progress = ""): #updates progress on media, accepts given prog
                     
                     pg += 1
                     r["progress"] = f"pg{pg}"
+                    r["lastupdated"] = now
                     os.system("cls" if os.name == "nt" else "clear")
                     print("Update successful!")
                     time.sleep(1)
@@ -491,6 +490,7 @@ def update(media, progress = ""): #updates progress on media, accepts given prog
                     
                     ch += 1
                     r["progress"] = f"ch{ch}"
+                    r["lastupdated"] = now
                     os.system("cls" if os.name == "nt" else "clear")
                     print("Update successful!")
                     time.sleep(1)
@@ -512,6 +512,7 @@ def update(media, progress = ""): #updates progress on media, accepts given prog
                     return
                 
                 r["progress"] = f"s{s}e{e}"
+                r["lastupdated"] = now
                 os.system("cls" if os.name == "nt" else "clear")
                 print("Update successful!")
                 time.sleep(1)
@@ -527,6 +528,7 @@ def update(media, progress = ""): #updates progress on media, accepts given prog
                     return
                 
                 r["progress"] = f"pg{pg}"
+                r["lastupdated"] = now
                 os.system("cls" if os.name == "nt" else "clear")
                 print("Update successful!")
                 time.sleep(1)
@@ -542,6 +544,7 @@ def update(media, progress = ""): #updates progress on media, accepts given prog
                     return
                 
                 r["progress"] = f"ch{ch}"
+                r["lastupdated"] = now
                 os.system("cls" if os.name == "nt" else "clear")
                 print("Update successful!")
                 time.sleep(1)
@@ -557,18 +560,11 @@ def update(media, progress = ""): #updates progress on media, accepts given prog
                     return
                 
                 r["progress"] = f"{hh}:{mm}"
+                r["lastupdated"] = now
                 os.system("cls" if os.name == "nt" else "clear")
                 print("Update successful!")
                 time.sleep(1)
-                return
-
-
-
-        
-
-
-                    
-
+                return       
 
 def prompt(): #constantly allows user to enter commands to do whatever they want
     global listindef
@@ -576,7 +572,6 @@ def prompt(): #constantly allows user to enter commands to do whatever they want
         while True:
             if listindef == True:
                 list_media()
-            print("Your current prefix is: " + prefix)
             x = input("Enter command: ")
             x = x.lower()
             os.system("cls" if os.name == "nt" else "clear")
@@ -598,7 +593,7 @@ def prompt(): #constantly allows user to enter commands to do whatever they want
                 argument = x[len(cmd):].lstrip()     # allow with/without a space
                 commands[cmd](argument)
             else:
-                print(f"Unknown command. Enter '{prefix}h' to see all the commands\n")
+                print(f"Unknown command. Enter 'help' to see all the commands\n")
 
     except EOFError:
         print("An error occured.")
@@ -606,26 +601,26 @@ def prompt(): #constantly allows user to enter commands to do whatever they want
         exit()
 
 
-def set_prefix(new_prefix): #allows user to enter commands via prefix
+'''def set_prefix(new_prefix): #allows user to enter commands via prefix
     global prefix, commands
     prefix = new_prefix
-    print("Your prefix is now set to '" + prefix + "'")
+    print("Your prefix is now set to '" +  "'")'''
 
 
 commands = { #COMMANDS SHOULD BE AT THE BOTTOM SO THAT ALL THE FUNCTIONS ARE DEFINED
-    prefix + "complete": complete,
-    prefix + "update": update,
-    prefix + "list": list_media,
-    prefix + "sort": sort,
-    prefix + "add": add_media,
-    prefix + "delete": delete_media,
-    prefix + "edit": edit,
-    prefix + "purge": purge,
-    prefix + "wipe": wipe,
-    prefix + "settings": settings,
-    prefix + "help": help_user,
-    prefix + "exit": exit,
-    prefix + "check": check
+     "complete": complete,
+     "update": update,
+     "list": list_media,
+     "sort": sort,
+     "add": add_media,
+     "delete": delete_media,
+     "edit": edit,
+     "purge": purge,
+     "wipe": wipe,
+     "settings": settings,
+     "help": help_user,
+     "exit": exit,
+     "check": check
 }
 
 
