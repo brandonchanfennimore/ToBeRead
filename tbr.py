@@ -2,7 +2,7 @@
 #IDEA: CREATE CHROME EXTENSION THAT USER CAN ALLOW TO AUTOMATICALLY UPDATE PROGRAM WHEN READING OR WATCHING ON BROWSER
 
 #PROGRAM CHANGES: 1. ADD AUTHOR/DIRECTOR ATTRIBUTE FOR BOOKS, MANGA, MANWHA, MOVIES
-#TODO: CODE LIST DETAILS, SORT, HELP, PURGE, WIPE, AND EDIT (I WANT EDIT TO BE LIKE ADD APPLICATION)
+#TODO: CODE LIST DETAILS, SORT, HELP, WIPE, AND EDIT (I WANT EDIT TO BE LIKE ADD APPLICATION)
 
 import os 
 import sys
@@ -18,7 +18,6 @@ from prompt_toolkit.application.current import get_app
 from prompt_toolkit.key_binding import KeyBindings
 from prompt_toolkit.application import run_in_terminal
 
-
 properties = ["type", "title", "lastupdated", "status", "progress", "rating", "dateadded", "datecompleted"]
 now = datetime.now().strftime("%Y-%m-%d")
 
@@ -28,7 +27,7 @@ now = datetime.now().strftime("%Y-%m-%d")
 def sort(arg=None): pass
 #def delete_media(arg=None): pass
 def edit(arg=None): pass
-def purge(arg=None): pass
+#def purge(arg=None): pass
 def wipe(arg=None): pass
 def settings(arg=None): pass
 def help_user(arg=None): pass
@@ -145,12 +144,21 @@ def check_for_duplicate(media): #helper function to check for duplicates
                 manga += 1
             elif r["type"] == "manwha":
                 manwha += 1
-
     
-    if anime > 1 or tv > 1 or movie > 1 or book > 1 or manga > 1 or manwha > 1: #checks for duplicates, if so spits out list of duplicates
-        return False
+    if anime > 1:
+        return "anime"
+    elif tv > 1:
+        return "tv"
+    elif movie > 1:
+        return "movie"
+    elif book > 1:
+        return "book"
+    elif manga > 1:
+        return "manga"
+    elif manwha > 1:
+        return "manwha"
     
-    return True #true in sense that we're all good not in that there are duplicates
+    return -1 # in sense that we're all good not in that there are duplicates
 
 def get_season_episode(progress): #helper function to grab season and episode out of progress
     season_index = progress.find("s")
@@ -344,9 +352,10 @@ def add_media(arg=None): #function to prompt user to add media and intakes all i
         # cancelled, just return to prompt normally
         return
 
+listadvanced = False #boolean to see if we list everything
 listindef = False #boolean to let system know that indefinite listing is off (default is off but might improve code to )
 def list_media(view=""): #lists everything in dictionary and accepts arguments for specified views
-    global listindef, rows
+    global listadvanced, listindef, rows
 
     if view.lower() in ("indef","indefinite"): #if argument is "indef" or "indefinite"
         listindef = True #turn on indefinite listing
@@ -354,25 +363,41 @@ def list_media(view=""): #lists everything in dictionary and accepts arguments f
     elif view.lower() == "stop": #if argument is "stop"
         listindef = False #turn off indefinite listing
         return #return now because function will list the media now if not returned
-    
+    elif view.lower() == "advanced":
+        listadvanced = True
+    elif view.lower() == "simple":
+        listadvanced = False
+
     if not rows: 
         print("No media entries found.")
         return
 
-    print(f"{'Title':<30} {'Type':<15} {'Status':<10} {'Progress':<10} {'Rating':<10}")
-    print("-" * 75)
-    for r in rows:
-        print(f"{r['title']:<30} {r['type']:<15} {r['status']:<10} {r['progress']:<10} {r['rating']:<10}")
-    print("\n")
+    if listadvanced == False:
+        print(f"{'Title':<30} {'Type':<10} {'Status':<10} {'Progress':<10} {'Rating':<5}")
+        print("-" * 75)
+        for r in rows:
+            print(f"{r['title']:<30} {r['type']:<10} {r['status']:<10} {r['progress']:<10} {r['rating']:<5}")
+        print("\n")    
+    elif listadvanced == True:
+        print(f"{'Title':<30} {'Type':<10} {'Status':<10} {'Progress':<10} {'Rating':<10} {'Date Created':<15} {'Last Updated':<15} {'Date Completed':<15}")
+        print("-" * 121)
+        for r in rows:
+            print(f"{r['title']:<30} {r['type']:<10} {r['status']:<10} {r['progress']:<10} {r['rating']:<10} {r['dateadded']:<15} {r['lastupdated']:<15} {r['datecompleted']:<15}")
+        print("\n")  
 
-def delete_media(arg=None): #deletes media from dictionary
+def delete_media(media): #deletes media from dictionary
     global rows
-    deletetitle = arg.strip()
+    deletetitle = media.strip()
     matching_row = [r for r in rows if r['title'].lower() == deletetitle.lower()]
     if not matching_row:
         print(f"No media found with title {deletetitle}\n")
         return
-    
+    if check_for_duplicate(media):
+        os.system("cls" if os.name == "nt" else "clear")
+        print("Error! You haveduplicates")
+        return
+
+
     confirm = input(f"Are you sure you want to delete '{deletetitle}'? (Y/N) ")
     if confirm.upper() == "Y":
         print(f"deleted {deletetitle}")
@@ -407,17 +432,23 @@ def complete(media): #changes the status of a media to complete
 
 
 def check(media): #user function to check media for duplicates, if so, will print all duplicates
-    if check_for_duplicate(media):
-        print("No media was found with no duplicates")
-    elif not check_for_duplicate(media):
+    if not media:
+        print("Please enter a media to check duplicates for")
+        return
+    
+    if check_for_duplicate(media) == -1:
+        print("No duplicates was found for the media you entered.")
+    elif check_for_duplicate(media) != -1:
+        type = check_for_duplicate(media)
         os.system("cls" if os.name == "nt" else "clear")
         print(f"{'Title':<30} {'Type':<15} {'Status':<10} {'Progress':<10} {'Rating':<10}")
         print("-" * 75)
         for r in rows:
             if r["title"].lower() == media.lower():
-                print(f"{r['title']:<30} {r['type']:<15} {r['status']:<10} {r['progress']:<10} {r['rating']:<10}")
+                if r["type"].lower() == type:
+                    print(f"{r['title']:<30} {r['type']:<15} {r['status']:<10} {r['progress']:<10} {r['rating']:<10}")
         print("\n")
-        print("Error! You have multiple listings with the same name AND type. Please change the name or the type of either.\n")
+        print("Error! You have multiple listings with the same name AND type. Please delete one or change the name/type of either.\n")
         time.sleep(3)
            
 def update(media, progress = ""): #updates progress on media, accepts given progress but if not given a progress then auto updates by 1
@@ -565,6 +596,27 @@ def update(media, progress = ""): #updates progress on media, accepts given prog
                 print("Update successful!")
                 time.sleep(1)
                 return       
+
+def purge(arg = ""): #function to delete all medias in csv file
+    global rows
+    if not rows: #announces no media to delete
+        os.system("cls" if os.name == "nt" else "clear")
+        print(f"No media to delete.\n")
+        time.sleep(2)
+        return
+    
+    confirm = input(f"Are you sure you want to delete EVERYTHING? There is no going back after this. (Y/N) ")
+    if confirm.upper() == "Y":
+        rows.clear()
+        os.system("cls" if os.name == "nt" else "clear")
+        print(f"Successfully purged everything")
+        time.sleep(2)
+        save_file()
+    elif confirm.upper() == "N":
+        print("Purge cancelled.\n")
+    else:
+        print("Uhhh...I'm just going to assume that means no. Purge cancelled.\n")
+    
 
 def prompt(): #constantly allows user to enter commands to do whatever they want
     global listindef
