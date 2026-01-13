@@ -1,7 +1,7 @@
 #IDEA: SAVE EVERYTHING THROUGH THE CLOUD THROUGH GITHUB. CREATE A FUNCTION THAT SAVES AND PUSHES THE FILES AND DATA TO GITHUB OR MAYBE JUST THE DATA
 #IDEA: CREATE CHROME EXTENSION THAT USER CAN ALLOW TO AUTOMATICALLY UPDATE PROGRAM WHEN READING OR WATCHING ON BROWSER
 
-#PROGRAM CHANGES: 1. ADD AUTHOR/DIRECTOR ATTRIBUTE FOR BOOKS, MANGA, MANWHA, MOVIES
+#PROGRAM CHANGES: 1. ADD AUTHOR/DIRECTOR ATTRIBUTE FOR BOOKS, MANGA, manhwa, MOVIES
 #TODO: CODE LIST DETAILS, SORT, HELP, WIPE, AND EDIT (I WANT EDIT TO BE LIKE ADD APPLICATION)
 
 import os 
@@ -18,7 +18,7 @@ from prompt_toolkit.application.current import get_app
 from prompt_toolkit.key_binding import KeyBindings
 from prompt_toolkit.application import run_in_terminal
 
-properties = ["type", "title", "lastupdated", "status", "progress", "rating", "dateadded", "datecompleted"]
+properties = ["index", "type", "title", "lastupdated", "status", "progress", "rating", "dateadded", "datecompleted"]
 now = datetime.now().strftime("%Y-%m-%d")
 
 #def complete(arg=None): pass
@@ -58,7 +58,6 @@ def load_file(): #opens file and translate each row to a dictionary so code can 
             pass
         rows = []
 
-
 def save_file(): #saves the file by writing the edited dictionaries to the rows
     try:
         with open("data.csv", "w", newline="") as f:
@@ -66,8 +65,11 @@ def save_file(): #saves the file by writing the edited dictionaries to the rows
     except IOError as e:
         print(f"An error occured while saving the file: {e}")
 
-def animation(message, duration): #function to print message animation 
+def clear_terminal():
     os.system("cls" if os.name == "nt" else "clear")
+
+def animation(message, duration): #function to print message animation 
+    clear_terminal()
     frames = [
             message,
             message + " .  ",
@@ -75,31 +77,30 @@ def animation(message, duration): #function to print message animation
             message + " . . .  "
         ]
     for _ in range(duration):
-        os.system("cls" if os.name == "nt" else "clear")
+        clear_terminal()
         for frame in frames:
             print(f"\r{frame}", end='', flush=True)
             time.sleep(0.3)
 
-    os.system("cls" if os.name == "nt" else "clear")
+    clear_terminal()
 
 def run_anim(msg: str, dur: int): #helper function to avoid "noneteype object not callable" error
     run_in_terminal(lambda: animation(msg, dur))
 
 def cancel(arg=None): #cancels function and uses animation
-    os.system("cls" if os.name == "nt" else "clear")
+    clear_terminal()
     get_app().exit(result=1)
     run_anim("Cancelling function", 2)
 
-
 def exit(arg=""): #exits the program but runs animation first
-    os.system("cls" if os.name == "nt" else "clear")
+    clear_terminal()
     save_file()
     if arg == "":
         animation("Exiting program", 2)
-        os.system("cls" if os.name == "nt" else "clear")
-        sys.exit()
+        clear_terminal()
+        sys.exit(0)
     elif arg == "q":
-        sys.exit()
+        sys.exit(0)
     else:
         print("Sorry I don't know what you're asking for...")
 
@@ -115,11 +116,29 @@ def check_for_existence(media): #helper function to check to make sure media exi
     for r in rows:
         if r["title"].lower() == media.lower():
             return True
-    '''os.system("cls" if os.name == "nt" else "clear")
+    '''clear_terminal()
     print("Error! Media not found. Please make sure your spelling is correct or that you're not delusional.\n")
     time.sleep(2)
     os.system("cls" if os.name== "nt" else "clear")'''
     return False
+
+def findNextIndex(arg=None):
+    biggest = 0
+    for r in rows:
+        try:
+            idx = int(r.get("index", 0))
+        except ValueError:
+            idx = 0
+        if idx > biggest:
+            biggest = idx
+    return biggest + 1
+
+def printIndex(arg=None):
+    clear_terminal()
+    nextIndex = findNextIndex()
+    print(nextIndex)
+    time.sleep(3)
+    return
 
 def check_for_duplicate(media): #helper function to check for duplicates
     global rows
@@ -129,7 +148,7 @@ def check_for_duplicate(media): #helper function to check for duplicates
     movie = 0
     book = 0
     manga = 0
-    manwha = 0
+    manhwa = 0
     for r in rows:
         if r["title"].lower() == media.lower():
             if r["type"] == "anime":
@@ -142,8 +161,8 @@ def check_for_duplicate(media): #helper function to check for duplicates
                 book += 1
             elif r["type"] == "manga":
                 manga += 1
-            elif r["type"] == "manwha":
-                manwha += 1
+            elif r["type"] == "manhwa":
+                manhwa += 1
     
     if anime > 1:
         return "anime"
@@ -155,10 +174,9 @@ def check_for_duplicate(media): #helper function to check for duplicates
         return "book"
     elif manga > 1:
         return "manga"
-    elif manwha > 1:
-        return "manwha"
-    
-    return -1 # in sense that we're all good not in that there are duplicates
+    elif manhwa > 1:
+        return "manhwa"
+    return -1 # in sense that we're all good not in that there are NO duplicates
 
 def get_season_episode(progress): #helper function to grab season and episode out of progress
     season_index = progress.find("s")
@@ -222,6 +240,7 @@ def get_timestamp(progress): #helper function to grab hours and minutes out of p
         return int(hh), int(mm)
 
 def add_media(arg=None): #function to prompt user to add media and intakes all information
+
     title_field = TextArea(height=1, prompt='', multiline=False)
     type_field = TextArea(height=1, prompt='', multiline=False)
     status_field = TextArea(height=1, prompt='', multiline=False)
@@ -250,22 +269,22 @@ def add_media(arg=None): #function to prompt user to add media and intakes all i
             asyncio.create_task(temp_message(result_field, "Please make sure the status is one of the following: planned, ongoing, completed, or dropped."))
             return
         
-        if type_.lower() == "anime" or "tv":
+        if type_.lower() in ("anime", "tv"):
             s, e = get_season_episode(progress)
             if s is None or e is None:
                 asyncio.create_task(temp_message(result_field, "Error! Please make sure the progress follows this format: 's#e#' (s for season, e for episode, # for the number)"))
                 return
-        elif type_.lower() == "book":
+        elif type_.lower() in ("book"):
             page_index = progress.find("pg")
             if page_index == -1 or page_index != 0 or not progress[page_index + 1].isdigit():
                 asyncio.create_task(temp_message(result_field, "Error! Please make sure the progress follows this format: 'pg#' (pg for page, # for number)"))
                 return
-        elif type_.lower() == "manga" or "manwha":
+        elif type_.lower() in ("manga", "manhwa"):
             chapter_index = progress.find("ch")
             if chapter_index == -1 or chapter_index != 0 or not progress[chapter_index + 1].isdigit():
                 asyncio.create_task(temp_message(result_field, "Error! Please make sure the progress follows this format: 'ch#' (ch for chapter, # for number)"))
                 return
-        elif type_.lower() == "movie":
+        elif type_.lower() in ("movie"):
             colon_index = progress.find(":")
             if colon_index != 2 or not progress[0].isdigit() or not progress[1].isdigit() or not progress[3].isdigit() or not progress[4].isdigit() or len(progress) > 5:
                 asyncio.create_task(temp_message(result_field, "Error! Please make sure the progress follows this format: 'hh:mm' (hh for hour, mm for minute)"))
@@ -277,8 +296,10 @@ def add_media(arg=None): #function to prompt user to add media and intakes all i
                     asyncio.create_task(temp_message(result_field, "Error! A media with the same name and type exists already. Please edit your attempted addition or edit the already existing media."))
                     return  
 
+        nextIndex = findNextIndex()
 
         rows.append({
+            "index": nextIndex,
             "type": type_,
             "title": title,
             "lastupdated": now,
@@ -292,10 +313,10 @@ def add_media(arg=None): #function to prompt user to add media and intakes all i
         app.exit(result=0)
 
         # After app exits, show confirmation for 3 seconds
-        os.system("cls" if os.name == "nt" else "clear")
+        clear_terminal()
         print(f"Successfully added '{title}'!")
         time.sleep(3)
-        os.system("cls" if os.name == "nt" else "clear")
+        clear_terminal()
 
 
     kb = KeyBindings()
@@ -373,12 +394,14 @@ def list_media(view=""): #lists everything in dictionary and accepts arguments f
         return
 
     if listadvanced == False:
+        clear_terminal()
         print(f"{'Title':<30} {'Type':<10} {'Status':<10} {'Progress':<10} {'Rating':<5}")
         print("-" * 75)
         for r in rows:
             print(f"{r['title']:<30} {r['type']:<10} {r['status']:<10} {r['progress']:<10} {r['rating']:<5}")
         print("\n")    
     elif listadvanced == True:
+        clear_terminal()
         print(f"{'Title':<30} {'Type':<10} {'Status':<10} {'Progress':<10} {'Rating':<10} {'Date Created':<15} {'Last Updated':<15} {'Date Completed':<15}")
         print("-" * 121)
         for r in rows:
@@ -392,9 +415,10 @@ def delete_media(media): #deletes media from dictionary
     if not matching_row:
         print(f"No media found with title {deletetitle}\n")
         return
-    if check_for_duplicate(media):
-        os.system("cls" if os.name == "nt" else "clear")
-        print("Error! You haveduplicates")
+    type, number = check_for_duplicate(media)
+    if type and number != -1:
+        clear_terminal()
+        print("Error! You have" + number + "duplicates")
         return
 
 
@@ -416,7 +440,7 @@ def complete(media): #changes the status of a media to complete
             if r["status"] == "completed":
                 print("Media is already completed...")
                 time.sleep(3)
-                os.system("cls" if os.name == "nt" else "clear")
+                clear_terminal()
                 return
             r["status"] = "completed"
             r["progress"] = "-"
@@ -430,17 +454,15 @@ def complete(media): #changes the status of a media to complete
         print("Unable to identify media.\n")
         return
 
-
 def check(media): #user function to check media for duplicates, if so, will print all duplicates
     if not media:
         print("Please enter a media to check duplicates for")
         return
-    
-    if check_for_duplicate(media) == -1:
+    type = check_for_duplicate(media)
+    if type == -1:
         print("No duplicates was found for the media you entered.")
-    elif check_for_duplicate(media) != -1:
-        type = check_for_duplicate(media)
-        os.system("cls" if os.name == "nt" else "clear")
+    elif type != -1:
+        clear_terminal()
         print(f"{'Title':<30} {'Type':<15} {'Status':<10} {'Progress':<10} {'Rating':<10}")
         print("-" * 75)
         for r in rows:
@@ -458,16 +480,16 @@ def update(media, progress = ""): #updates progress on media, accepts given prog
     for r in rows:
         if r["title"].lower() == media.lower():
             if progress == "": #if no specific progress
-                if r["type"] == "anime" or r["type"] == "tv": #updates anime and tv shows by either 1 season or 1 episode
+                if r["type"] in ("anime", "tv"): #updates anime and tv shows by either 1 season or 1 episode
                     s, e = get_season_episode(r["progress"])
 
                     if s == None or e == None:
-                        os.system("cls" if os.name == "nt" else "clear")
-                        print("Error! There's something wrong with your progress attribute of the media you entered. Please edit your media progress to match the following format: s#e#.")
+                        clear_terminal()
+                        print("Error! There's something wrong with your progress attribute of the media you entered. Please list and edit if necessary.")
                         time.sleep(3)
                         return
 
-                    os.system("cls" if os.name == "nt" else "clear")
+                    clear_terminal()
                     while True: 
                         whichone = input("Which one would you like to update: 'season' or 'episode'? ")
                         if whichone.lower() == "season":
@@ -475,7 +497,7 @@ def update(media, progress = ""): #updates progress on media, accepts given prog
                             e = 0
                             r["progress"] = f"s{s}e{e}"
                             r["lastupdated"] = now
-                            os.system("cls" if os.name == "nt" else "clear")
+                            clear_terminal()
                             print("Update successful!")
                             time.sleep(1)
                             return
@@ -483,21 +505,21 @@ def update(media, progress = ""): #updates progress on media, accepts given prog
                             e += 1
                             r["progress"] = f"s{s}e{e}"
                             r["lastupdated"] = now
-                            os.system("cls" if os.name == "nt" else "clear")
+                            clear_terminal()
                             print("Update successful!")
                             time.sleep(1)
                             return
                         else:
-                            os.system("cls" if os.name == "nt" else "clear")
+                            clear_terminal()
                             print("Not a valid answer...\n")
                             time.sleep(2)
-                            os.system("cls" if os.name == "nt" else "clear")
+                            clear_terminal()
                 
                 if r["type"] == "book": #updates books by 1 page
                     pg = get_page(r["progress"])
 
                     if pg == None:
-                        os.system("cls" if os.name == "nt" else "clear")
+                        clear_terminal()
                         print("Error! There's something wrong with your progress attribute of the media you entered. Please list and edit if necessary.")
                         time.sleep(3)
                         return
@@ -505,16 +527,16 @@ def update(media, progress = ""): #updates progress on media, accepts given prog
                     pg += 1
                     r["progress"] = f"pg{pg}"
                     r["lastupdated"] = now
-                    os.system("cls" if os.name == "nt" else "clear")
+                    clear_terminal()
                     print("Update successful!")
                     time.sleep(1)
                     return
 
-                if r["type"] == "manga" or r["type"] == "manwha": #updates manga and manwha by 1 chapter
+                if r["type"] in ("manga", "manhwa"): #updates manga and manhwa by 1 chapter
                     ch = get_chapter(r["progress"])
 
                     if ch == None:
-                        os.system("cls" if os.name == "nt" else "clear")
+                        clear_terminal()
                         print("Error! There's something wrong with your progress attribute of the media you entered. Please list and edit if necessary.")
                         time.sleep(3)
                         return
@@ -522,29 +544,29 @@ def update(media, progress = ""): #updates progress on media, accepts given prog
                     ch += 1
                     r["progress"] = f"ch{ch}"
                     r["lastupdated"] = now
-                    os.system("cls" if os.name == "nt" else "clear")
+                    clear_terminal()
                     print("Update successful!")
                     time.sleep(1)
                     return
 
                 if r["type"] == "movie": #prints that can't really update movie progress without specified timestamp
-                    os.system("cls" if os.name == "nt" else "clear")
+                    clear_terminal()
                     print("Error! We can't really update a movie progress for you without a specific timestamp. Give me a specific timestamp or just finish the movie.")
                     time.sleep(3)
                     return
                 
-            if r["type"] == "anime" or r["type"] == "tv": #update anime and tv shows with specified season and episode
+            if r["type"] in ("anime", "tv"): #update anime and tv shows with specified season and episode
                 s, e = get_season_episode(progress)
                 
                 if s == None or e == None:
-                    os.system("cls" if os.name == "nt" else "clear")
+                    clear_terminal()
                     print("Error! Please make sure the progress follows this format: 's#e#' (s for season, e for episode, # for the number)")
                     time.sleep(3)
                     return
                 
                 r["progress"] = f"s{s}e{e}"
                 r["lastupdated"] = now
-                os.system("cls" if os.name == "nt" else "clear")
+                clear_terminal()
                 print("Update successful!")
                 time.sleep(1)
                 return
@@ -553,30 +575,30 @@ def update(media, progress = ""): #updates progress on media, accepts given prog
                 pg = get_page(progress)
 
                 if pg == None:
-                    os.system("cls" if os.name == "nt" else "clear")
+                    clear_terminal()
                     print("Error! Please make sure the progress follows this format: 'pg#' (pg for page, # for number)")
                     time.sleep(3)
                     return
                 
                 r["progress"] = f"pg{pg}"
                 r["lastupdated"] = now
-                os.system("cls" if os.name == "nt" else "clear")
+                clear_terminal()
                 print("Update successful!")
                 time.sleep(1)
                 return
 
-            if r["type"] == "manga" or r["type"] == "manwha": #update manga and manwha with specified chapter
+            if r["type"] in ("manga", "manhwa"): #update manga and manhwa with specified chapter
                 ch = get_chapter(progress)
                 
                 if ch == None:
-                    os.system("cls" if os.name == "nt" else "clear")
+                    clear_terminal()
                     print("Error! Please make sure the progress follows this format: 'ch#' (ch for chapter, # for number)")
                     time.sleep(3)
                     return
                 
                 r["progress"] = f"ch{ch}"
                 r["lastupdated"] = now
-                os.system("cls" if os.name == "nt" else "clear")
+                clear_terminal()
                 print("Update successful!")
                 time.sleep(1)
                 return
@@ -585,14 +607,14 @@ def update(media, progress = ""): #updates progress on media, accepts given prog
                 hh, mm = get_timestamp(progress)
                 
                 if hh == None or mm == None:
-                    os.system("cls" if os.name == "nt" else "clear")
+                    clear_terminal()
                     print("Error! Please make sure the progress follows this format: 'hh:mm' (hh for hour, mm for minute)")
                     time.sleep(3)
                     return
                 
                 r["progress"] = f"{hh}:{mm}"
                 r["lastupdated"] = now
-                os.system("cls" if os.name == "nt" else "clear")
+                clear_terminal()
                 print("Update successful!")
                 time.sleep(1)
                 return       
@@ -600,15 +622,15 @@ def update(media, progress = ""): #updates progress on media, accepts given prog
 def purge(arg = ""): #function to delete all medias in csv file
     global rows
     if not rows: #announces no media to delete
-        os.system("cls" if os.name == "nt" else "clear")
+        clear_terminal()
         print(f"No media to delete.\n")
         time.sleep(2)
         return
     
     confirm = input(f"Are you sure you want to delete EVERYTHING? There is no going back after this. (Y/N) ")
     if confirm.upper() == "Y":
-        rows.clear()
-        os.system("cls" if os.name == "nt" else "clear")
+        rows.clear_terminal()
+        clear_terminal()
         print(f"Successfully purged everything")
         time.sleep(2)
         save_file()
@@ -617,7 +639,6 @@ def purge(arg = ""): #function to delete all medias in csv file
     else:
         print("Uhhh...I'm just going to assume that means no. Purge cancelled.\n")
     
-
 def prompt(): #constantly allows user to enter commands to do whatever they want
     global listindef
     try:
@@ -626,18 +647,20 @@ def prompt(): #constantly allows user to enter commands to do whatever they want
                 list_media()
             x = input("Enter command: ")
             x = x.lower()
-            os.system("cls" if os.name == "nt" else "clear")
+            clear_terminal()
             # split into command + optional argument
             if ' ' in x:
                 cmd_in, argument = x.split(' ', 1)
             else:
                 cmd_in, argument = x, ""
+            
             # x already read and stripped above
             # Try exact match first
             if x in commands:
                 commands[x]("")
                 continue
-
+            if x in ("exit", "exit q"):
+                break
             # Otherwise, find the longest command key that prefixes x
             matches = [cmd for cmd in commands if x.startswith(cmd)]
             if matches:
@@ -651,7 +674,6 @@ def prompt(): #constantly allows user to enter commands to do whatever they want
         print("An error occured.")
         time.sleep(0.5)
         exit()
-
 
 '''def set_prefix(new_prefix): #allows user to enter commands via prefix
     global prefix, commands
@@ -672,12 +694,14 @@ commands = { #COMMANDS SHOULD BE AT THE BOTTOM SO THAT ALL THE FUNCTIONS ARE DEF
      "settings": settings,
      "help": help_user,
      "exit": exit,
-     "check": check
+     "check": check,
+     "index": printIndex
 }
 
 
 def main(): #loads files and prompts user to do whatever they want
     load_file()
     prompt()
+    sys.exit(0)
 if __name__ == "__main__":
     main()
