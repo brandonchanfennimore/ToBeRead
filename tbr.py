@@ -140,43 +140,33 @@ def printIndex(arg=None):
     time.sleep(3)
     return
 
-def check_for_duplicate(media): #helper function to check for duplicates
+def check_for_duplicate(media): #function to check for duplicates
     global rows
 
-    anime = 0
-    tv = 0
-    movie = 0
-    book = 0
-    manga = 0
-    manhwa = 0
+    counts = {
+        "anime": 0,
+        "tv": 0,
+        "movie": 0,
+        "book": 0,
+        "manga": 0,
+        "manhwa": 0
+    }
+
+    target = media.strip().lower()
+
     for r in rows:
-        if r["title"].lower() == media.lower():
-            if r["type"] == "anime":
-                anime += 1
-            elif r["type"] == "tv":
-                tv += 1
-            elif r["type"] == "movie":
-                movie += 1
-            elif r["type"] == "book":
-                book += 1
-            elif r["type"] == "manga":
-                manga += 1
-            elif r["type"] == "manhwa":
-                manhwa += 1
-    
-    if anime > 1:
-        return "anime"
-    elif tv > 1:
-        return "tv"
-    elif movie > 1:
-        return "movie"
-    elif book > 1:
-        return "book"
-    elif manga > 1:
-        return "manga"
-    elif manhwa > 1:
-        return "manhwa"
-    return -1 # in sense that we're all good not in that there are NO duplicates
+        title = r["title"].strip().lower()
+        media_type = r["type"].strip().lower()
+
+        if title == target and media_type in counts:
+            counts[media_type] += 1
+
+    for media_type, count in counts.items():
+        if count > 1:
+            return media_type, count #returns the duplicate type and the number of duplicates
+
+    return -1, -1 #returns -1 in the sense that there are NO duplicates
+
 
 def get_season_episode(progress): #helper function to grab season and episode out of progress
     season_index = progress.find("s")
@@ -375,7 +365,7 @@ def add_media(arg=None): #function to prompt user to add media and intakes all i
 
 listadvanced = False #boolean to see if we list everything
 listindef = False #boolean to let system know that indefinite listing is off (default is off but might improve code to )
-def list_media(view=""): #lists everything in dictionary and accepts arguments for specified views
+def list_media(view=""): #lists everything in database and accepts arguments for specified views
     global listadvanced, listindef, rows
 
     if view.lower() in ("indef","indefinite"): #if argument is "indef" or "indefinite"
@@ -408,7 +398,7 @@ def list_media(view=""): #lists everything in dictionary and accepts arguments f
             print(f"{r['title']:<30} {r['type']:<10} {r['status']:<10} {r['progress']:<10} {r['rating']:<10} {r['dateadded']:<15} {r['lastupdated']:<15} {r['datecompleted']:<15}")
         print("\n")  
 
-def delete_media(media): #deletes media from dictionary
+def delete_media(media): #deletes media from database
     global rows
     deletetitle = media.strip()
     matching_row = [r for r in rows if r['title'].lower() == deletetitle.lower()]
@@ -458,19 +448,27 @@ def check(media): #user function to check media for duplicates, if so, will prin
     if not media:
         print("Please enter a media to check duplicates for")
         return
-    type = check_for_duplicate(media)
+    type, numberofduplicates = check_for_duplicate(media)
     if type == -1:
         print("No duplicates was found for the media you entered.")
     elif type != -1:
+        target = media.strip().lower()
+        display_index = 1
         clear_terminal()
-        print(f"{'Title':<30} {'Type':<15} {'Status':<10} {'Progress':<10} {'Rating':<10}")
-        print("-" * 75)
+        print(f"{' ':<4} {'Title':<30} {'Type':<15} {'Status':<10} {'Progress':<10} {'Rating':<10}")
+        print("-" * 80)
         for r in rows:
-            if r["title"].lower() == media.lower():
-                if r["type"].lower() == type:
-                    print(f"{r['title']:<30} {r['type']:<15} {r['status']:<10} {r['progress']:<10} {r['rating']:<10}")
+            title = r["title"].strip().lower()
+            mediatype = r["type"].strip().lower()
+            if title == target and  mediatype == type:
+                print(f"{display_index:<4} {r['title']:<30} {r['type']:<15} {r['status']:<10} {r['progress']:<10} {r['rating']:<10}")
+                display_index += 1
         print("\n")
         print("Error! You have multiple listings with the same name AND type. Please delete one or change the name/type of either.\n")
+
+        #while True:
+            #print("Error! You have multiple listings with the same name AND type. Please delete one or change the name/type of either.\n")
+            #user_selection = input("Please choose which one would you like to delete or edit: ")
         time.sleep(3)
            
 def update(media, progress = ""): #updates progress on media, accepts given progress but if not given a progress then auto updates by 1
@@ -694,6 +692,7 @@ commands = { #COMMANDS SHOULD BE AT THE BOTTOM SO THAT ALL THE FUNCTIONS ARE DEF
      "settings": settings,
      "help": help_user,
      "exit": exit,
+     "checkforduplicate": check_for_duplicate,
      "check": check,
      "index": printIndex
 }
