@@ -1,5 +1,5 @@
 This my first big program and personal project.
-I reallyi like reading manga and watching TV shows.
+I really like reading manga and watching TV shows.
 But due to my busy life I'm never consistently reading/watching.
 I end up just reading/watching like once a week.
 And because I'm constantly switching between devices.
