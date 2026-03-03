@@ -1,8 +1,32 @@
-This my first big program and personal project.
-I really like reading manga and watching TV shows.
-But due to my busy life I'm never consistently reading/watching.
-I end up just reading/watching like once a week.
-And because I'm constantly switching between devices.
-I wanted to create a program where I can easily add media quickly, similar to the concept of mudae bot where I can just roll with a small command.
-Right now the program is still in the backend phase.
-But I plan on making this into a full blown program with cross platform one day.
+# ToBeRead – Media Tracker
+
+ToBeRead is a modular command-line application designed to track books, manga, TV shows, and other media using structured CSV-based storage.
+
+## Overview
+
+The project was built to streamline media tracking across devices through a lightweight terminal interface. It enables users to quickly add, view, and manage media entries without relying on third-party platforms.
+
+## Features
+
+- Command-line interface for rapid media entry
+- CSV-based persistent storage
+- Duplicate detection to maintain data integrity
+- Indexed media enumeration for easy reference
+- Modular architecture separating user interaction and storage logic
+
+## Architecture
+
+The application follows a modular design:
+
+- Core logic handles menu routing and user input
+- Storage module manages CSV read/write operations
+- Helper functions perform validation and duplicate checks
+
+This separation improves maintainability and allows for future feature expansion.
+
+## Future Improvements
+
+- Cross-platform GUI implementation
+- Cloud synchronization support
+- Enhanced filtering and search functionality
+- User configuration settings
